@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <title>reveal.js</title>
+
+    <link rel="stylesheet" href="dist/reset.css" />
+    <link rel="stylesheet" href="dist/reveal.css" />
+    <link rel="stylesheet" href="dist/theme/white.css" />
+
+    <!-- Theme used for syntax highlighted code -->
+    <link rel="stylesheet" href="plugin/highlight/monokai.css" />
+  </head>
+
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section data-background="images/os-concepts-cover.jpg">
+          <div
+            id="title"
+            style="
+              border-radius: 15px;
+              background: rgba(255, 255, 255, 0.7);
+              padding: 20px;
+            "
+          >
+            <div class="title-text-box">
+              <b>
+                <h2 style="color: rgb(80, 80, 80); text-transform: none">
+                  Thread Safety: A Cautionary Tale
+                </h2>
+                <p style="color: rgb(80, 80, 80)">James Stevenson</p>
+              </b>
+            </div>
+          </div>
+        </section>
+        <section>
+          <h3>Outline</h3>
+          <ul>
+            <li>Overview: sequential and asynchronous programming</li>
+            <li>Our cast of characters</li>
+            <li>What happened</li>
+            <li>Threading the knot</li>
+          </ul>
+        </section>
+
+        <!-- overview -->
+        <section>
+          <section>
+            <h3>Sequential and asynchronous programming</h3>
+          </section>
+          <section data-markdown>
+            <textarea data-template>
+    ### Sequential programming
+    ```python
+    x = 1 + 2
+    print(x)  # prints '3'
+    x += 1
+    print(x)  # prints '4'
+    ```
+</textarea
+            >
+          </section>
+          <section>
+            <h3>Sequential programming</h3>
+            <div style="text-align: left">
+              <p><b>Pros</b></p>
+              <ul>
+                <li>Simple</li>
+                <li>Efficient</li>
+              </ul>
+              <p><b>Cons</b></p>
+              <ul>
+                <li>
+                  If this was all that computers could do, we'd never get
+                  anything done
+                </li>
+              </ul>
+            </div>
+          </section>
+          <section>
+            <h3>Wait, what?</h3>
+            <img data-src="images/pdp11.jpg" width="40%" />
+            <p></p>
+            <small
+              >(Pictured: where we'd be if we could only run programs
+              sequentially [~metaphor?])</small
+            >
+          </section>
+          <section data-background-image="images/multi-programs.png">
+            <h3 style="color: rgb(255, 255, 255)">That's right.</h3>
+            <p style="color: rgb(255, 255, 255)">
+              Sequential programming is a lie.
+            </p>
+          </section>
+          <section>
+            <h3>What's happening, then?</h3>
+            <p><i>Context switches</i>:</p>
+            <ul>
+              <li>Between different processes (~programs)</li>
+              <li>Between different threads (~workers within a program)</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Processes</h3>
+            <p></p>
+            <img data-src="images/processes.png" />
+            <small><em>Sam Wolfson, UW</em></small>
+          </section>
+          <section>
+            <h3>Concurrency</h3>
+            <p></p>
+            <img data-src="images/concurrency.png" />
+            <p></p>
+            <small><em>Sam Wolfson, UW</em></small>
+          </section>
+          <section>
+            <h3>Okay, so threads...?</h3>
+            <ul>
+              <li>Like a process within a process ('lightweight process')</li>
+              <li>
+                Used to accomplish <b>blocking</b> tasks in an efficient manner
+              </li>
+              <li><b>Shared memory space</b></li>
+            </ul>
+          </section>
+          <section data-markdown>
+            <textarea data-template>
+    ### But they can be scary
+    ```python
+    # ... we get an array, x, from somewhere
+    print(x)  # prints '[1, 2, 3, 4]'
+    x.append(5)  # we add a 5 to the end
+    print(x)  # prints `[1, 2, 3, 4, 5, 5, 5]` - wtf?
+    ```
+</textarea
+            >
+          </section>
+        </section>
+
+        <!-- the cast -->
+        <section>
+          <section data-background-image="images/cast.jpg">
+            <div
+              id="title"
+              style="
+                border-radius: 15px;
+                background: rgba(255, 255, 255, 0.7);
+                padding: 20px;
+              "
+            >
+              <div class="title-text-box">
+                <b>
+                  <h3 style="text-transform: none">Our cast of characters</h3>
+                </b>
+              </div>
+            </div>
+          </section>
+          <section>
+            <h3>A fusion curation interface</h3>
+            <iframe
+              src="http://fusion-curation-prod.us-east-2.elasticbeanstalk.com/"
+              width="800px"
+              height="400px"
+            ></iframe>
+          </section>
+          <section>
+            <h3>Basic architecture</h3>
+            <img data-src="images/fcui-diagram.png" />
+          </section>
+          <section>
+            <img data-src="images/fastapi.png" />
+            <p></p>
+            <ul>
+              <li>
+                "A modern, fast web framework for building APIs" (whatever that
+                means)
+              </li>
+              <li>Give it an HTTP request and it'll handle/respond</li>
+              <li>Used in most #wags projects</li>
+            </ul>
+          </section>
+          <section>
+            <img data-src="images/uvicorn.png" width="30%" />
+            <p></p>
+            <ul>
+              <li>"A lightning-fast ASGI server implementation"</li>
+              <li>Handles HTTP requests asynchronously</li>
+              <li>Great logo</li>
+            </ul>
+          </section>
+          <section>
+            <img data-src="images/postgres.jpeg" width="40%" />
+            <p></p>
+            <ul>
+              <li>"Powerful relational database system"</li>
+              <li>It stores tables of stuff</li>
+              <li>
+                We use it to store the Biocommons Universal Transcript Archive
+                (UTA)
+              </li>
+              <li>Pretty good logo</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Psycopg2</h3>
+            <ul>
+              <li>
+                "the most popular PostgreSQL adapter for the Python programming
+                language"
+              </li>
+              <li>Lets Python code talk to Postgres DBs</li>
+              <li>Unfortunate name</li>
+            </ul>
+          </section>
+          <section>
+            <h3>Tying it all together</h3>
+            <p></p>
+            <img data-src="images/eb-threads.png" width="60%" />
+          </section>
+        </section>
+
+        <!-- what happened -->
+        <section>
+          <section data-background-image="images/scoobydoo.webp">
+            <div
+              id="title"
+              style="
+                border-radius: 15px;
+                background: rgba(255, 255, 255, 0.7);
+                padding: 20px;
+              "
+            >
+              <div class="title-text-box">
+                <b>
+                  <h3 style="text-transform: none">What happened</h3>
+                </b>
+              </div>
+            </div>
+          </section>
+          <section>
+            <iframe
+              src="http://fusion-curation-prod.us-east-2.elasticbeanstalk.com/"
+              width="800px"
+              height="400px"
+            ></iframe>
+          </section>
+
+          <section data-markdown>
+            <textarea data-template>
+```
+***Using Gene Database Endpoint: http://localhost:8000***
+INFO:     Started server process [95974]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+in get_tx_exons for N: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_0: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_00: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_0025: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_00252: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529.: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529.3: cds_se_i is [['56,268;268,343;343,415;415,484;484,630;630,773;773,906;906,1233;1233,1251;1251,1307;1307,1410;1410,1557;1557,1688;1688,1861;1861,2102;2102,2261;2261,2447']]
+```
+</textarea
+            >
+          </section>
+          <section data-markdown>
+            <textarea data-template>
+```
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529.: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529.3: cds_se_i is [['56,268;268,343;343,415;415,484;484,630;630,773;773,906;906,1233;1233,1251;1251,1307;1307,1410;1410,1557;1557,1688;1688,1861;1861,2102;2102,2261;2261,2447']]
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529.3: cds_se_i is [['56,268;268,343;343,415;415,484;484,630;630,773;773,906;906,1233;1233,1251;1251,1307;1307,1410;1410,1557;1557,1688;1688,1861;1861,2102;2102,2261;2261,2447']]
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529.3: cds_se_i is [['56,268;268,343;343,415;415,484;484,630;630,773;773,906;906,1233;1233,1251;1251,1307;1307,1410;1410,1557;1557,1688;1688,1861;1861,2102;2102,2261;2261,2447']]
+in get_tx_exons for N: cds_se_i is []
+INFO:     None:0 - "POST /lookup/coords HTTP/1.1" 200 OK
+in get_tx_exons for NM_002529.3: cds_se_i is [['56,268;268,343;343,415;415,484;484,630;630,773;773,906;906,1233;1233,1251;1251,1307;1307,1410;1410,1557;1557,1688;1688,1861;1861,2102;2102,2261;2261,2447']]
+in get_tx_exons for NM: cds_se_i is [['NTRK1', 'NC_000001.11', 156860878, 156861146, 1], ['NTRK1', 'NC_000001.10', 156830670, 156830938, 1]]
+```
+</textarea
+            >
+          </section>
+          <section>
+            <h3>That sucks. What's happening?</h3>
+            <ul>
+              <li>Multiple threads are running lookup routines at once.</li>
+              <li>
+                We make several queries to UTA per transcript lookup request.
+              </li>
+              <li>
+                Wires are getting crossed - the response to one thread is
+                getting sent to another.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <img data-src="images/docs.png" />
+          </section>
+        </section>
+      </div>
+    </div>
+
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script>
+      // More info about initialization & config:
+      // - https://revealjs.com/initialization/
+      // - https://revealjs.com/config/
+      Reveal.initialize({
+        hash: true,
+
+        // Learn about plugins: https://revealjs.com/plugins/
+        plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+      });
+    </script>
+  </body>
+</html>
