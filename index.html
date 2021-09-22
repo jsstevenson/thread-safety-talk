@@ -208,7 +208,7 @@
             </ul>
           </section>
           <section>
-            <h3>Psycopg2</h3>
+            <img data-src="images/psycopg_logo.png">
             <ul>
               <li>
                 "the most popular PostgreSQL adapter for the Python programming
@@ -309,7 +309,10 @@ in get_tx_exons for NM: cds_se_i is [['NTRK1', 'NC_000001.11', 156860878, 156861
           <section>
             <h3>That sucks. What's happening?</h3>
             <ul>
-              <li>Multiple threads are running lookup routines at once.</li>
+              <li>
+                Multiple threads* are running lookup routines at once, using
+                the same connection to the database.
+              </li>
               <li>
                 We make several queries to UTA per transcript lookup request.
               </li>
@@ -318,9 +321,77 @@ in get_tx_exons for NM: cds_se_i is [['NTRK1', 'NC_000001.11', 156860878, 156861
                 getting sent to another.
               </li>
             </ul>
+            <p></p>
+            <em
+              ><small
+                >*technically, "coroutines", which are threads of a particular
+                level of threadiness</small
+              ></em
+            >
           </section>
           <section>
             <img data-src="images/docs.png" />
+          </section>
+        </section>
+
+        <!-- wrapping it up -->
+        <section>
+          <section>
+            <h2><b>What is to be done???</b></h2>
+            <p></p>
+            <img data-src="images/sand-meme.png" />
+          </section>
+          <section>
+            <h3>1) Drop Uvicorn</h3>
+            <p>
+              Older server software, which implements "WSGI" rather than "ASGI",
+              doesn't have this problem, because it uses less thready threads
+            </p>
+            <p>WSGI is less efficient for our use case</p>
+            <p>I tested this and it totally works, though</p>
+          </section>
+          <section>
+            <h3>2) Threadsafe DB connections</h3>
+            <p>
+              Instead of a single DB connection, initialize a <em>pool</em> of
+              connections
+            </p>
+            <p>Lock the pool within a <em>semaphore</em></p>
+            <p></p>
+            <p>
+              We would have to code this ourselves, which seems very weird to
+              say for some reason
+            </p>
+          </section>
+          <section>
+            <h3>sema-what?</h3>
+            <img data-src="images/semaphore.jpg" width="40%" />
+            <p></p>
+            <p>
+              Concurrency management structure that keeps a locked count of how
+              many resources are available.
+            </p>
+            <p>
+              Maintains a count of available resources (including negative if
+              demand exceeds supply).
+            </p>
+          </section>
+          <section>
+            <h3>Humorous aside</h3>
+            <img data-src="images/problem.png" />
+          </section>
+          <section>
+            <h3>3) Drop psycopg2</h3>
+            <p>
+              I was 95% of the way through writing this presentation when I
+              found out this was an option
+            </p>
+            <p>
+              Psycopg2 is the dominant Python Postgres client, but there are
+              new, tenable alternatives designed specifically for
+              ASGI/coroutines
+            </p>
+            <p>This is probably the way to go (anticlimactic)</p>
           </section>
         </section>
       </div>
